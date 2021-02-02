@@ -121,30 +121,56 @@ const filtersData = [
       [-1,  0,  1,  1,  1],
       [0,  1,  1,  1,  1]
     ]
+  },
+  {
+    index: 9,
+    ref: 'color',
+    _function: colorFilter,
+    active: true,
+    rendered: true,
   }
 ];
 
 const colorSliders = [
   {
     index: 0,
-    label: 'Red channel',
+    label: 'Red',
     rendered: false,
     ref: 'red',
-    slider: null
+    slider: null,
+    min: -4,
+    max: 4,
+    default: 0
   },
   {
     index: 1,
-    label: 'Green channel',
+    label: 'Green',
     rendered: false,
     ref: 'green',
-    slider: null
+    slider: null,
+    min: -4,
+    max: 4,
+    default: 0
   },
   {
     index: 2,
-    label: 'Blue channel',
+    label: 'Blue',
     rendered: false,
     ref: 'blue',
-    slider: null
+    slider: null,
+    min: -4,
+    max: 4,
+    default: 0
+  },
+  {
+    index: 3,
+    label: 'Brightness',
+    rendered: false,
+    ref: 'brightness',
+    slider: null,
+    min: -1,
+    max: 1,
+    default: 1
   }
 ]
 
@@ -185,7 +211,7 @@ function setup() {
  * @return void.
  */
 function draw () {
-    background(125);
+    background(0);
 
     drawMenu();
 
@@ -224,7 +250,6 @@ function mousePressed () {
 function earlyBirdFilter (img) {
   loadingDiv.addClass('active');
 
-  let resultImg = createImage(imgIn.width, imgIn.height);
   let filtered = imgIn;
   filtersData.forEach((f, i) => {
     if (f.active) {
@@ -232,7 +257,7 @@ function earlyBirdFilter (img) {
     }
   });
 
-  getChannelInfo(filtered);
+  //filtered = setColourAdjust(filtered);
 
   setTimeout(() => {
     loadingDiv.removeClass('active');
@@ -240,26 +265,31 @@ function earlyBirdFilter (img) {
   return filtered;
 }
 
-function getChannelInfo (img) {
+function colorFilter (img) {
+  $timer('colorFilter', true);
+  const imgOut = createImage(img.width, img.height);
+
+  // Load in the pixels
   img.loadPixels();
+  imgOut.loadPixels();
 
-  let redSum = 0;
-  let greenSum = 0;
-  let blueSum = 0;
-
-  for (let i = 0, j = img.imageData.data.length; i < j; i += 4) {
+  for (let i = 0, j = imgOut.imageData.data.length; i < j; i += 4) {
     // Get channels
     const redC = img.pixels[i];
     const greenC = img.pixels[i + 1];
     const blueC = img.pixels[i + 2];
+    const alphaC = img.pixels[i + 3];
 
-    // Sum channels
-    redSum += redC;
-    greenSum += greenC;
-    blueSum += blueC;
+    imgOut.pixels[i] = redC + redC * colorSliders[0].slider.value();
+    imgOut.pixels[i + 1] = greenC + greenC * colorSliders[1].slider.value();
+    imgOut.pixels[i + 2] = blueC + blueC * colorSliders[2].slider.value();
+    imgOut.pixels[i + 3] = alphaC + alphaC * colorSliders[3].slider.value();;
   }
 
-  setSliders(img, redSum, blueSum, greenSum);
+  // Update
+  imgOut.updatePixels();
+  $timer('colorFilter', false);
+  return imgOut;
 }
 
 /**
@@ -296,15 +326,15 @@ function sepiaFilter (img) {
   return imgOut;
 }
 
-function setSliders (img, red, green, blue) {
-  let redValue = round(map(red, 0, (img.imageData.data.length / 4) * 255, 0, 255));
-  let greenValue = round(map(green, 0, (img.imageData.data.length / 4) * 255, 0, 255));
-  let blueValue = round(map(blue, 0, (img.imageData.data.length / 4) * 255, 0, 255));
+// function setSliders (img, red, green, blue) {
+//   let redValue = round(map(red, 0, (img.imageData.data.length / 4) * 255, 0, 255));
+//   let greenValue = round(map(green, 0, (img.imageData.data.length / 4) * 255, 0, 255));
+//   let blueValue = round(map(blue, 0, (img.imageData.data.length / 4) * 255, 0, 255));
 
-  colorSliders[0].slider.value(redValue);
-  colorSliders[1].slider.value(greenValue);
-  colorSliders[2].slider.value(blueValue);
-}
+//   colorSliders[0].slider.value(redValue);
+//   colorSliders[1].slider.value(greenValue);
+//   colorSliders[2].slider.value(blueValue);
+// }
 
 /**
  * Adds dark corners to an image
@@ -532,14 +562,6 @@ function invertFilter (img) {
 }
 
 
-
-
-
-
-
-
-
-
 /**
  * Adds a border to an image
  *
@@ -684,11 +706,9 @@ function drawMenu () {
     colorAdjustButtons.addClass('menu__color-adjust-buttons');
     colorAdjustButtons.parent(colorAdjustColumn);
 
-    const applyButton = createButton('apply');
-    applyButton.parent(colorAdjustButtons);
-
     const resetButton = createButton('reset');
     resetButton.parent(colorAdjustButtons);
+    resetButton.mousePressed(resetSilders);
 
     menuDivRendered = true;
   }
@@ -714,24 +734,32 @@ function drawSlider (slider) {
     return;
 
   }
-  const min = 0;
-  const max = 255;
-  const value = 0;
-  const step = 1;
 
   const sliderDiv = createDiv();
   sliderDiv.addClass('menu__color-adjust-slider');
   sliderDiv.parent(colorAdjustInner);
   const sliderName = createDiv(slider.label);
   sliderName.parent(sliderDiv);
-  slider.slider = createSlider(min, max, value, step);
+  slider.slider = createSlider(slider.min, slider.max, slider.default, 0.1);
   slider.slider.parent(sliderDiv);
+  slider.slider.changed(sliderChanged);
   slider.rendered = true;
+}
+
+function sliderChanged () {
+  loop();
+}
+
+function resetSilders () {
+  colorSliders[0].slider.value(colorSliders[0].default)
+  colorSliders[1].slider.value(colorSliders[1].default)
+  colorSliders[2].slider.value(colorSliders[2].default)
+  colorSliders[3].slider.value(colorSliders[3].default)
+  loop();
 }
 
 
 function keyPressed () {
-  let state;
   switch (key) {
     case '1':
       toggleFilter('sepia');
@@ -768,7 +796,5 @@ function toggleFilter (_filter) {
   const check = getfiltersDataValue(_filter, 'checkbox');
   check.checked(!state);
   const instructions = getfiltersDataValue(_filter, 'instructions');
-
-
   loop();
 }
