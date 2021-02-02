@@ -5,10 +5,101 @@
     <title>graphicsProgramming - Coursera</title>
     <script src="libraries/p5.min.js" type="text/javascript"></script>
     <script src="libraries/p5.sound.min.js" type="text/javascript"></script>
-    
     <script src="sketch.js" type="text/javascript"></script>
+    <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      padding: 0;
+      margin: 8px 0 0 8px;
+      background-color: #ccc;
+    }
+    canvas {
+      vertical-align: top;
+    }
 
-    <style> body {padding: 0; margin: 0;} canvas {vertical-align: top;} </style>
+    .menu {
+      background-color: #3e3e3e;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-start;
+      align-content: flex-start;
+      margin: 0 0 0 8px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .menu > div {
+      padding: 16px;
+    }
+    .menu .menu__title {
+      margin: 0 0 8px;
+      color: #ffff00;
+      text-transform: uppercase;
+    }
+    .menu__filter-column {
+      flex-grow: 1;
+      font-size: 1.1rem;
+      color: #fff;
+    }
+    .menu__filter-inner {
+      display: flex;
+      flex-wrap: wrap;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      align-content: flex-start;
+      max-height: 120px;
+    }
+    .menu__filter-checkbox {
+      margin: 0 0 8px;      color: #fff;
+    }
+    .menu__filter-checkbox label {
+      padding: 0 60px 0 8px;
+    }
+
+    .menu__color-adjust-column {
+      flex-grow: 1;
+      font-size: 1.1rem;
+      color: #fff;
+    }
+    .menu__color-adjust-inner {
+      display: flex;
+      flex-direction: row;
+    }
+    .menu__color-adjust-slider {
+      flex-grow: 1;
+    }
+    .menu__color-adjust-slider > div {
+      margin: 0 0 8px;
+    }
+    .menu__color-adjust-buttons button {
+      padding: 8px;
+      background-color: #ccc;
+      color: #333;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      font-family: Arial, Helvetica, sans-serif;
+      border: none;
+      border-radius: 0;
+      margin: 8px 8px 0 0;
+      width: 100%;
+      display: inline-block;
+    }
+    .loading {
+      position: absolute;
+      background-color: #000000;
+      padding: 8px;
+      position: absolute;
+      top: calc((711px / 2) - 15px);
+      left: -3000px;
+    }
+    .active.loading {
+      left: calc((1500px / 2) - 72px);
+    }
+    </style>
   </head>
   <body>
   </body>
