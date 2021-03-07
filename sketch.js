@@ -1,41 +1,27 @@
 // Image of Husky Creative commons from Wikipedia:
 // https://en.wikipedia.org/wiki/Dog#/media/File:Siberian_Husky_pho.jpg
+
 let imgIn; // Image to be used
-const matrix = [
-  [1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64],
-  [1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64],
-  [1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64],
-  [1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64],
-  [1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64],
-  [1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64],
-  [1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64],
-  [1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64, 1/64]
-]; // Matrix for radial blur
-let devMode = true; // If we're in dev mode, log analysis to the screen
-
-let menuDiv;
-//let filterColumn;
-//let slidersDiv;
-//let slidersInner;
-//let colorAdjustColumn;
-let menuDivRendered = false;
-//let slidersDivRendered = false;
-const body = document.body;
-//let slidersButtons;
-
-let filtersInner;
-let colorAdjustInner;
-
-
+let devMode = false; // If we're in dev mode, log analysis to the screen
+let menuDiv; // HTML element for the menu
+let filtersInner; // HTML element for the inner menu containing the filters
+let colorAdjustInner; // HTML element for the inner menu containing the colour adjusters
+let menuDivRendered = false; // Ensure we only draw the menu once
+const body = document.body; // Shortcut for the body tag
+let loadingDiv; // HTML element for the loading message
+let loadingImg; // Store the loading image on preload
+const loadingTimer = 500; // How long to show the loader (milliseconds)
+// Filters configuration
 const filtersData = [
   {
-    index: 1,
-    ref: 'sepia',
-    label: `Sepia (press '1')`,
-    _function: sepiaFilter,
-    active: true,
-    rendered: false,
-    checkbox: null
+    index: 1, // Index
+    ref: 'sepia', // Name of filter
+    label: `Sepia (press '1')`, // Filter label to display on screen
+    _function: sepiaFilter, // Fiter function to call when activated/deactivated
+    active: true, // Current active status
+    rendered: false, // Whether this filter has been rendered in the menu
+    checkbox: null // A handle for the checkbox used to toggle the filter
+    // matrix: [] // Matrix used (OPTIONAL)
   },
   {
     index: 2,
@@ -90,9 +76,9 @@ const filtersData = [
   },
   {
     index: 6,
-    ref: 'grayscale',
-    label: `Grayscale (press '6')`,
-    _function: grayscaleFilter,
+    ref: 'greyscale',
+    label: `Greyscale (press '6')`,
+    _function: greyscaleFilter,
     active: false,
     rendered: false,
     checkbox: null,
@@ -130,17 +116,17 @@ const filtersData = [
     rendered: true,
   }
 ];
-
+// Colour adjusters configuration
 const colorSliders = [
   {
-    index: 0,
-    label: 'Red',
-    rendered: false,
-    ref: 'red',
-    slider: null,
-    min: -4,
-    max: 4,
-    default: 0
+    index: 0, // Index
+    label: 'Red', // Label to display on screen
+    rendered: false, // Whether this adjuster has been rendered
+    ref: 'red', // The identifier for this filter
+    slider: null, // Handle for the slider
+    min: -4, // Minumum value for the slider
+    max: 4, // Maximum value for the slider
+    default: 0 // Default value for the slider
   },
   {
     index: 1,
@@ -174,10 +160,6 @@ const colorSliders = [
   }
 ]
 
-let loadingDiv;
-let loadingImg;
-const loadingTimer = 500;
-
 /**
  * P5 preload functionality
  *
@@ -194,15 +176,14 @@ function preload () {
  * @return void.
  */
 function setup() {
-    createCanvas((imgIn.width * 2), imgIn.height);
-    pixelDensity(1);
+  createCanvas((imgIn.width * 2), imgIn.height);
+  pixelDensity(1);
 
-    loadingDiv = createDiv();
-    loadingDiv.addClass('loading');
-    //loadingDiv.addClass('active');
-
-    const loader = createImg('./assets/loader.gif', 'generating image');
-    loader.parent(loadingDiv);
+  // Set up the loading animation
+  const loader = createImg('./assets/loader.gif', 'generating image');
+  loadingDiv = createDiv();
+  loadingDiv.addClass('loading');
+  loader.parent(loadingDiv);
 }
 
 /**
@@ -213,24 +194,32 @@ function setup() {
 function draw () {
     background(0);
 
+    // Draw the menu
     drawMenu();
 
+    // Draw the colour sliders
     colorSliders.forEach(slider => {
       drawSlider(slider);
     });
 
+    // Render initial colour image (left hand side)
     image(imgIn, 0, 0);
+
+    // Render the filtered image (right hand side)
     image(earlyBirdFilter(imgIn), imgIn.width, 0);
 
+    // Draw the various filters
     filtersData.forEach(_filter => {
       drawCheckbox(_filter.ref, _filter.label);
     });
 
+    // Looping not necessary
     noLoop();
 }
 
 /**
  * P5 event listener - mouse pressed
+ * Kick off a loop
  *
  * @return void.
  */
@@ -250,6 +239,7 @@ function mousePressed () {
 function earlyBirdFilter (img) {
   loadingDiv.addClass('active');
 
+  // Add each active filter
   let filtered = imgIn;
   filtersData.forEach((f, i) => {
     if (f.active) {
@@ -257,39 +247,13 @@ function earlyBirdFilter (img) {
     }
   });
 
-  //filtered = setColourAdjust(filtered);
-
+  // Show loading message
   setTimeout(() => {
     loadingDiv.removeClass('active');
   }, loadingTimer);
+
+  // Return final image
   return filtered;
-}
-
-function colorFilter (img) {
-  $timer('colorFilter', true);
-  const imgOut = createImage(img.width, img.height);
-
-  // Load in the pixels
-  img.loadPixels();
-  imgOut.loadPixels();
-
-  for (let i = 0, j = imgOut.imageData.data.length; i < j; i += 4) {
-    // Get channels
-    const redC = img.pixels[i];
-    const greenC = img.pixels[i + 1];
-    const blueC = img.pixels[i + 2];
-    const alphaC = img.pixels[i + 3];
-
-    imgOut.pixels[i] = redC + redC * colorSliders[0].slider.value();
-    imgOut.pixels[i + 1] = greenC + greenC * colorSliders[1].slider.value();
-    imgOut.pixels[i + 2] = blueC + blueC * colorSliders[2].slider.value();
-    imgOut.pixels[i + 3] = alphaC + alphaC * colorSliders[3].slider.value();;
-  }
-
-  // Update
-  imgOut.updatePixels();
-  $timer('colorFilter', false);
-  return imgOut;
 }
 
 /**
@@ -326,15 +290,6 @@ function sepiaFilter (img) {
   return imgOut;
 }
 
-// function setSliders (img, red, green, blue) {
-//   let redValue = round(map(red, 0, (img.imageData.data.length / 4) * 255, 0, 255));
-//   let greenValue = round(map(green, 0, (img.imageData.data.length / 4) * 255, 0, 255));
-//   let blueValue = round(map(blue, 0, (img.imageData.data.length / 4) * 255, 0, 255));
-
-//   colorSliders[0].slider.value(redValue);
-//   colorSliders[1].slider.value(greenValue);
-//   colorSliders[2].slider.value(blueValue);
-// }
 
 /**
  * Adds dark corners to an image
@@ -391,7 +346,6 @@ function darkCornersFilter (img) {
   return imgOut;
 }
 
-
 /**
  * Adds a radial blur filter from mouse position
  *
@@ -444,9 +398,16 @@ function radialBlurFilter (img) {
   imgOut.updatePixels();
   $timer('radialBlurFilter', false);
   return imgOut;
-
 }
 
+/**
+ * Applys an unknown filter to an image, using a matrix
+ *
+ * @param {image} img - The image to apply the filter to
+ * @param {array[]} matrix - The matrix to use
+ *
+ * @return {image} - The image with the added filter
+ */
 function applyFilterFromMatrix (img, matrix) {
 
   const imgOut = createImage(img.width, img.height);
@@ -474,17 +435,21 @@ function applyFilterFromMatrix (img, matrix) {
     imgOut.pixels[pixel + 1] = c[1] + g;
     imgOut.pixels[pixel + 2] = c[2] + b;
     imgOut.pixels[pixel + 3] = 255;
-
   }
 
   // Update
   imgOut.updatePixels();
 
   return imgOut;
-
 }
 
-
+/**
+ * Applys a sharpen filter to an image
+ *
+ * @param {image} img - The image to apply the filter to
+ *
+ * @return {image} - The image with the added filter
+ */
 function sharpenFilter (img) {
   $timer('sharpenFilter', true);
   const imgOut = applyFilterFromMatrix(img, getfiltersDataValue('sharpen', 'matrix'))
@@ -492,6 +457,13 @@ function sharpenFilter (img) {
   return imgOut;
 }
 
+/**
+ * Applys an emboss effect to an image
+ *
+ * @param {image} img - The image to apply the filter to
+ *
+ * @return {image} - The image with the added filter
+ */
 function embossFilter (img) {
   $timer('embossFilter', true);
   const imgOut = applyFilterFromMatrix(img, getfiltersDataValue('emboss', 'matrix'))
@@ -499,10 +471,16 @@ function embossFilter (img) {
   return imgOut;
 }
 
+/**
+ * Adds a greyscale effect to an image
+ *
+ * @param {image} img - The image to apply the filter to
+ *
+ * @return {image} - The image with the greyscale effect
+ */
+function greyscaleFilter (img) {
 
-function grayscaleFilter (img) {
-
-  $timer('grayscaleFilter', true);
+  $timer('greyscaleFilter', true);
   const imgOut = createImage(img.width, img.height);
 
   // Load in the pixels
@@ -522,16 +500,21 @@ function grayscaleFilter (img) {
     imgOut.pixels[i + 1] = constrain(aphaChannel, 0, 255);
     imgOut.pixels[i + 2] = constrain(aphaChannel, 0, 255);
     imgOut.pixels[i + 3] = 255;
-
   }
 
   // Update
   imgOut.updatePixels();
-  $timer('grayscaleFilter', false);
+  $timer('greyscaleFilter', false);
   return imgOut;
-
 }
 
+/**
+ * Adds an invert effect to an image
+ *
+ * @param {image} img - The image to apply the filter to
+ *
+ * @return {image} - The image with the inverse effect
+ */
 function invertFilter (img) {
 
   $timer('invertFilter', true);
@@ -558,7 +541,6 @@ function invertFilter (img) {
   imgOut.updatePixels();
   $timer('invertFilter', false);
   return imgOut;
-
 }
 
 
@@ -595,6 +577,40 @@ function borderFilter (img) {
   buffer.rect(0, 0, img.width, img.height);
   $timer('borderFilter', false);
   return buffer;
+}
+
+/**
+ * Adds a colour filter to an image
+ *
+ * @param {image} img - The image to apply the border to
+ *
+ * @return {image} - The image with the colour filter
+ */
+function colorFilter (img) {
+  $timer('colorFilter', true);
+  const imgOut = createImage(img.width, img.height);
+
+  // Load in the pixels
+  img.loadPixels();
+  imgOut.loadPixels();
+
+  for (let i = 0, j = imgOut.imageData.data.length; i < j; i += 4) {
+    // Get channels
+    const redC = img.pixels[i];
+    const greenC = img.pixels[i + 1];
+    const blueC = img.pixels[i + 2];
+    const alphaC = img.pixels[i + 3];
+
+    imgOut.pixels[i] = redC + redC * colorSliders[0].slider.value();
+    imgOut.pixels[i + 1] = greenC + greenC * colorSliders[1].slider.value();
+    imgOut.pixels[i + 2] = blueC + blueC * colorSliders[2].slider.value();
+    imgOut.pixels[i + 3] = alphaC + alphaC * colorSliders[3].slider.value();;
+  }
+
+  // Update
+  imgOut.updatePixels();
+  $timer('colorFilter', false);
+  return imgOut;
 }
 
 /**
@@ -650,6 +666,14 @@ function $timer (ref, start) {
   console.timeEnd(ref);
 }
 
+/**
+ * Gets the value of a passed key in a filters configuration
+ *
+ * @param {string} _filter - The filter object to search
+ * @param {string} key - The key of the value to return
+ *
+ * @return {any} - The value at the passed key
+ */
 function getfiltersDataValue (_filter, key) {
   let value = null;
   const filters = filtersData.map(f => {
@@ -661,6 +685,15 @@ function getfiltersDataValue (_filter, key) {
   return value;
 }
 
+/**
+ * Sets the value of a passed key in a filters configuration
+ *
+ * @param {string} _filter - The filter object to update
+ * @param {string} key - The key of the value to update
+ * @param {string} value - The value to update the key with
+ *
+ * @return void.
+ */
 function setfiltersDataValue (_filter, key, value) {
   const filters = filtersData.map(f => {
     if (f.ref === _filter && typeof f[key] !== 'undefined') {
@@ -670,6 +703,11 @@ function setfiltersDataValue (_filter, key, value) {
   });
 }
 
+/**
+ * Draw the user menu to the screen
+ *
+ * @return void.
+ */
 function drawMenu () {
   const menuWidth = imgIn.width * 2;
   if (!menuDivRendered) {
@@ -706,7 +744,7 @@ function drawMenu () {
     colorAdjustButtons.addClass('menu__color-adjust-buttons');
     colorAdjustButtons.parent(colorAdjustColumn);
 
-    const resetButton = createButton('reset');
+    const resetButton = createButton('reset colours');
     resetButton.parent(colorAdjustButtons);
     resetButton.mousePressed(resetSilders);
 
@@ -714,7 +752,14 @@ function drawMenu () {
   }
 }
 
-
+/**
+ * Draw a filter checkbox to the screen
+ *
+ * @param {string} id - The id to give the checkbox
+ * @param {string} label - The label to display on the screen
+ *
+ * @return void.
+ */
 function drawCheckbox (id, label) {
   if (getfiltersDataValue(id, 'rendered') === true) {
     return;
@@ -729,6 +774,13 @@ function drawCheckbox (id, label) {
   setfiltersDataValue(id, 'checkbox', checkbox);
 }
 
+/**
+ * Draw a colour adjustment slider to the screen
+ *
+ * @param {object} slider - The config object to use for the slider
+ *
+ * @return void.
+ */
 function drawSlider (slider) {
   if (slider.rendered) {
     return;
@@ -746,10 +798,20 @@ function drawSlider (slider) {
   slider.rendered = true;
 }
 
+/**
+ * Slider event - when slider changes, call loop()
+ *
+ * @return void.
+ */
 function sliderChanged () {
   loop();
 }
 
+/**
+ * Rest all adjustment sliders to their default values
+ *
+ * @return void.
+ */
 function resetSilders () {
   colorSliders[0].slider.value(colorSliders[0].default)
   colorSliders[1].slider.value(colorSliders[1].default)
@@ -758,7 +820,12 @@ function resetSilders () {
   loop();
 }
 
-
+/**
+ * p5 event - when a key is pressed
+ * Passes relevant filter reference on to toggle function
+ *
+ * @return void.
+ */
 function keyPressed () {
   switch (key) {
     case '1':
@@ -777,7 +844,7 @@ function keyPressed () {
       toggleFilter('sharpen');
       break;
     case '6':
-      toggleFilter('grayscale');
+      toggleFilter('greyscale');
       break;
     case '7':
       toggleFilter('invert');
@@ -790,11 +857,15 @@ function keyPressed () {
   }
 }
 
+/**
+ * Toggles a filter between active and inactive
+ *
+ * @return void.
+ */
 function toggleFilter (_filter) {
   let state = getfiltersDataValue(_filter, 'active');
   setfiltersDataValue(_filter, 'active', !state);
   const check = getfiltersDataValue(_filter, 'checkbox');
   check.checked(!state);
-  const instructions = getfiltersDataValue(_filter, 'instructions');
   loop();
 }
